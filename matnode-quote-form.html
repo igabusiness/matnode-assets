@@ -16,7 +16,9 @@
    • Domestic Logistics pricing capture: per-package pickup/delivery
      locations + transportation type (Patrick's model).
    • Exchange-rate data fields (Exchange Rate Type / Government / Local Market).
-   • Native IgaOS/GHL upload HOOKS reserved for Phase 2 (marked clearly).
+   • File uploads intentionally omitted — team requests documents via
+     WhatsApp/email once the quote conversation starts. (Native IgaOS
+     upload field can be added later if desired.)
    • Submits ONE JSON payload to the IgaOS webhook.
 
   >>> CONFIG (below in <script>): WEBHOOK_URL, WHATSAPP, HS_CODES_URL.
@@ -155,9 +157,6 @@
   #mn-quote-root .mn-ref{font-size:12px; color:var(--muted-2); margin-top:16px;}
   #mn-quote-root .mn-spin{display:inline-block; width:15px; height:15px; border:2px solid rgba(26,18,5,.35); border-top-color:#1a1205; border-radius:50%; animation:mnspin .7s linear infinite; vertical-align:-2px; margin-right:8px;}
   @keyframes mnspin{to{transform:rotate(360deg);}}
-  /* upload hook (phase 2 placeholder) */
-  #mn-quote-root .mn-uphook{display:flex; gap:10px; align-items:center; padding:12px 14px; border:1px dashed var(--amber); border-radius:12px; background:rgba(232,163,61,.06); font-size:12.5px; color:var(--muted); margin-top:10px;}
-  #mn-quote-root .mn-uphook svg{flex-shrink:0;}
   /* footer whatsapp link */
   #mn-quote-root .mn-wa-foot{text-align:center; margin-top:22px;}
   #mn-quote-root .mn-wa-foot .mn-wa-q{color:var(--muted); font-size:14px; margin-bottom:8px;}
@@ -207,10 +206,6 @@
       <div class="mn-cond" id="mn-mode-other-wrap">
         <span class="mn-flabel">Describe your freight mode</span>
         <textarea id="mn-mode-other" placeholder="Tell us how you'd like the cargo moved…"></textarea>
-        <div class="mn-uphook" data-hook="mode-other">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span>Attachment upload appears here (added via IgaOS upload field).</span>
-        </div>
       </div>
     </div>
 
@@ -254,14 +249,10 @@
   <!-- ===== STEP C &mdash; Consultation (simple flow) ===== -->
   <div class="mn-step" data-step="C">
     <h3 class="mn-q">Tell us what you need.</h3>
-    <p class="mn-hint">Describe your enquiry and attach any relevant documents. This goes straight to our team by email &mdash; no lengthy form.</p>
+    <p class="mn-hint">Describe your enquiry and our team will follow up by email &mdash; no lengthy form.</p>
     <div class="mn-fieldset">
       <span class="mn-flabel">Your message</span>
       <textarea id="mn-consult-msg" style="min-height:120px" placeholder="Describe your shipment, question, or the service you're exploring…"></textarea>
-    </div>
-    <div class="mn-uphook" data-hook="consultation">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      <span>Attachment upload appears here (added via IgaOS upload field in Phase 2).</span>
     </div>
     <div class="mn-row" style="margin-top:16px">
       <div class="mn-fieldset"><span class="mn-flabel">Full name</span><input type="text" id="mn-c-name" placeholder="Your name" /></div>
@@ -327,10 +318,6 @@
       </select>
       <!-- conditional per-type fields injected here -->
       <div class="mn-cond" id="mn-ctype-cond"><div id="mn-ctype-fields"></div>
-        <div class="mn-uphook" id="mn-ctype-upload" style="display:none">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <span id="mn-ctype-upload-txt">Supporting document upload appears here (added via IgaOS upload field).</span>
-        </div>
       </div>
     </div>
 
@@ -459,10 +446,7 @@
         <div class="mn-opt-card" data-val="Certificate of origin"><span class="mn-tick"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1a1205" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>Certificate of origin</div>
         <div class="mn-opt-card" data-val="Import/export permit"><span class="mn-tick"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1a1205" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>Import / export permit</div>
       </div>
-      <div class="mn-uphook" data-hook="documents">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <span>Document upload appears here (added via IgaOS upload field in Phase 2).</span>
-      </div>
+      <p class="mn-hint" style="margin-top:10px; font-size:12px">Just tick what you have &mdash; our team will request the actual files by email or WhatsApp once we start your quote.</p>
     </div>
 
     <div class="mn-row">
@@ -575,7 +559,6 @@
     "Human Remains": [{k:'remainsType', label:'Type', type:'select', opts:['Cremated (Ashes)','Uncremated (Coffin)']}],
     "Vehicle": [{k:'model', label:'Model', ph:'e.g. Toyota Hiace'},{k:'year', label:'Year', ph:'e.g. 2019'}]
   };
-  var CARGO_UPLOAD = { "Hazardous Cargo":"MSDS / SDS document upload appears here (via IgaOS).", "Radioactive":"Radiation certificate upload appears here (via IgaOS).", "Live Animals":"Veterinary / CITES document upload appears here (via IgaOS).", "Human Remains":"Death certificate / permit upload appears here (via IgaOS)." };
 
   // ================= HS CODE DATA =================
   var HS = []; var hsLoaded = false;
@@ -683,11 +666,7 @@
       html += '</div>';
       host.innerHTML = html;
       cond.classList.add('mn-show');
-    } else { host.innerHTML=''; if(!CARGO_UPLOAD[this.value]) cond.classList.remove('mn-show'); else cond.classList.add('mn-show'); }
-    // upload hook
-    var up = $('mn-ctype-upload');
-    if(CARGO_UPLOAD[this.value]){ up.style.display='flex'; $('mn-ctype-upload-txt').textContent = CARGO_UPLOAD[this.value]; cond.classList.add('mn-show'); }
-    else { up.style.display='none'; }
+    } else { host.innerHTML=''; cond.classList.remove('mn-show'); }
   });
 
   // ================= item grid (commodities) =================
