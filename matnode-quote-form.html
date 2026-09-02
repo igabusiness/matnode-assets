@@ -99,6 +99,25 @@
   #mn-quote-root .mn-bad{border-color:var(--bad)!important; box-shadow:0 0 0 3px rgba(224,83,61,.14)!important;}
   #mn-quote-root .mn-row{display:grid; gap:12px; grid-template-columns:1fr 1fr;}
   #mn-quote-root .mn-row-3{display:grid; gap:12px; grid-template-columns:1fr 1fr 1fr;}
+  #mn-quote-root .mn-row-4{display:grid; gap:12px; grid-template-columns:1fr 1fr 1fr 1fr;}
+  /* nested builder nodes */
+  #mn-quote-root .mn-node{border:1.5px solid var(--line); border-radius:14px; margin-bottom:14px; background:#fff; overflow:hidden;}
+  #mn-quote-root .mn-node-ctr{border-color:#e3c689; background:#fffdf8;}
+  #mn-quote-root .mn-node-pkg{border-color:var(--line);}
+  #mn-quote-root .mn-node-head{display:flex; align-items:center; gap:10px; padding:14px 16px; cursor:pointer; user-select:none;}
+  #mn-quote-root .mn-node-ctr > .mn-node-head{background:rgba(232,163,61,.10);}
+  #mn-quote-root .mn-node-pkg > .mn-node-head{background:var(--panel-2);}
+  #mn-quote-root .mn-node-toggle{display:flex; color:var(--muted); transition:transform .2s;}
+  #mn-quote-root .mn-node.mn-collapsed .mn-node-toggle{transform:rotate(-90deg);}
+  #mn-quote-root .mn-node-title{font-weight:700; color:var(--ink); font-size:14.5px;}
+  #mn-quote-root .mn-node-sum{color:var(--muted); font-size:12.5px; flex:1;}
+  #mn-quote-root .mn-node-rm{background:transparent; border:1px solid var(--line); color:var(--muted); border-radius:8px; padding:5px 12px; font-size:12px; font-weight:600; cursor:pointer; transition:.15s;}
+  #mn-quote-root .mn-node-rm:hover{border-color:var(--bad); color:var(--bad);}
+  #mn-quote-root .mn-node-body{padding:16px; border-top:1px solid var(--line);}
+  #mn-quote-root .mn-node.mn-collapsed .mn-node-body{display:none;}
+  #mn-quote-root .mn-sub{margin-top:14px; padding:14px; border:1px dashed var(--line); border-radius:11px; background:var(--panel-2);}
+  #mn-quote-root .mn-sub-label{font-size:12px; font-weight:700; color:var(--amber); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px;}
+  #mn-quote-root .mn-add-commodity, #mn-quote-root .mn-add-package{margin-top:10px;}
   /* conditional block */
   #mn-quote-root .mn-cond{display:none; margin-top:12px; padding:14px; border:1px dashed var(--line); border-radius:10px; background:rgba(245,165,36,.03);}
   #mn-quote-root .mn-cond.mn-show{display:block; animation:mnf .3s ease;}
@@ -178,7 +197,7 @@
 <div class="mn-card">
   <div class="mn-prog-wrap">
     <div class="mn-steps-row" id="mn-steps-row"><!-- circles injected --></div>
-    <div class="mn-sname-wrap"><span class="mn-step-name" id="mn-sname">Service</span> <span class="mn-step-name" style="color:var(--muted-2)">· Step <span id="mn-cur">1</span> of <span id="mn-total">6</span></span></div>
+    <div class="mn-sname-wrap"><span class="mn-step-name" id="mn-sname">Service</span> <span class="mn-step-name" style="color:var(--muted-2)">&middot; Step <span id="mn-cur">1</span> of <span id="mn-total">6</span></span></div>
   </div>
 
   <form id="mn-form" novalidate autocomplete="off">
@@ -186,7 +205,7 @@
   <!-- ===== STEP 1 &mdash; Service & direction ===== -->
   <div class="mn-step mn-active" data-step="1">
     <h3 class="mn-q">What can we help you move?</h3>
-    <p class="mn-hint">Tell us the direction and type of shipment. We'll only ask what's relevant from here.</p>
+    <p class="mn-hint">Tell us the service and route. We'll only ask what's relevant from here.</p>
 
     <div class="mn-fieldset">
       <span class="mn-flabel">Shipment direction</span>
@@ -243,7 +262,31 @@
         <div class="mn-opt-card" data-val="Express">Express</div>
       </div>
     </div>
-    <p class="mn-err" id="mn-e1">Please choose a shipment direction and freight mode.</p>
+
+    <!-- route (merged from old step 2) -->
+    <div id="mn-route-block">
+      <div class="mn-row">
+        <div class="mn-fieldset">
+          <span class="mn-flabel">Origin <span class="mn-tip">Country, city, port or pickup point</span></span>
+          <input type="text" id="mn-origin" placeholder="e.g. Shanghai, China" />
+        </div>
+        <div class="mn-fieldset">
+          <span class="mn-flabel">Destination <span class="mn-tip">Country, city, port or delivery point</span></span>
+          <input type="text" id="mn-dest" placeholder="e.g. Lagos, Nigeria" />
+        </div>
+      </div>
+      <div class="mn-row">
+        <div class="mn-fieldset">
+          <span class="mn-flabel">Pickup date <span class="mn-tip">Estimated cargo-ready date</span></span>
+          <input type="date" id="mn-ready" />
+        </div>
+        <div class="mn-fieldset">
+          <span class="mn-flabel">Delivery date <span class="mn-tip">Estimated cargo-receive date</span></span>
+          <input type="date" id="mn-deliverydate" />
+        </div>
+      </div>
+    </div>
+    <p class="mn-err" id="mn-e1">Please choose a direction and freight mode, and enter origin and destination.</p>
   </div>
 
   <!-- ===== STEP C &mdash; Consultation (simple flow) ===== -->
@@ -266,35 +309,8 @@
     <p class="mn-err" id="mn-eC">Please add a message, your name, a valid email, and accept to continue.</p>
   </div>
 
-  <!-- ===== STEP 2 &mdash; Route & basics ===== -->
+  <!-- ===== STEP 2 &mdash; Cargo overview ===== -->
   <div class="mn-step" data-step="2">
-    <h3 class="mn-q">Where is it going?</h3>
-    <p class="mn-hint">Origin, destination and timing.</p>
-    <div class="mn-row">
-      <div class="mn-fieldset">
-        <span class="mn-flabel">Origin <span class="mn-tip">Country, city, port or pickup point</span></span>
-        <input type="text" id="mn-origin" placeholder="e.g. Shanghai, China" />
-      </div>
-      <div class="mn-fieldset">
-        <span class="mn-flabel">Destination <span class="mn-tip">Country, city, port or delivery point</span></span>
-        <input type="text" id="mn-dest" placeholder="e.g. Lagos, Nigeria" />
-      </div>
-    </div>
-    <div class="mn-row">
-      <div class="mn-fieldset">
-        <span class="mn-flabel">Pickup date <span class="mn-tip">Estimated cargo-ready date</span></span>
-        <input type="date" id="mn-ready" />
-      </div>
-      <div class="mn-fieldset">
-        <span class="mn-flabel">Delivery date <span class="mn-tip">Estimated cargo-receive date</span></span>
-        <input type="date" id="mn-deliverydate" />
-      </div>
-    </div>
-    <p class="mn-err" id="mn-e2">Please enter both origin and destination.</p>
-  </div>
-
-  <!-- ===== STEP 3 &mdash; Cargo overview ===== -->
-  <div class="mn-step" data-step="3">
     <h3 class="mn-q">Tell us about the cargo.</h3>
     <p class="mn-hint">This helps us plan handling, documents and any special requirements.</p>
 
@@ -321,11 +337,6 @@
       </div>
     </div>
 
-    <div class="mn-fieldset">
-      <span class="mn-flabel">Packaging / container type <span class="mn-tip" id="mn-pack-tip">Options match your selected freight mode.</span></span>
-      <select id="mn-packaging"><option value="">Select freight mode first…</option></select>
-    </div>
-
     <!-- separated requirement fields -->
     <div class="mn-fieldset">
       <span class="mn-flabel">Requirements <span class="mn-opt">optional &mdash; fill any that apply</span></span>
@@ -341,28 +352,10 @@
     </div>
   </div>
 
-  <!-- ===== STEP 4 &mdash; Cargo items (duty data) ===== -->
-  <div class="mn-step" data-step="4">
-    <h3 class="mn-q">Your commodities.</h3>
-    <p class="mn-hint">Search each item's HS code or name &mdash; the description fills in automatically. We use HS code and value to work out duty. <span id="mn-hs-status" style="color:var(--amber)"></span></p>
-
-    <div class="mn-gridhead mn-igrid">
-      <span>Commodity (search HS code / name) <b>*</b></span>
-      <span>HS code <b>*</b></span>
-      <span>Value</span>
-      <span>Qty</span>
-      <span></span>
-    </div>
-    <div id="mn-items"><!-- item rows --></div>
-    <button class="mn-additem" id="mn-add-item" type="button">+ Add another commodity</button>
-    <p class="mn-hint" style="margin-top:10px; font-size:12px">Tip: HS descriptions use official customs wording. If a keyword doesn't match, try the HS code digits, or type the commodity name and our team will confirm the code.</p>
-    <p class="mn-err" id="mn-e4">Please add at least one commodity with its HS code.</p>
-  </div>
-
-  <!-- ===== STEP 5 &mdash; Packages / containers (service data) ===== -->
-  <div class="mn-step" data-step="5">
-    <h3 class="mn-q" id="mn-s5-title">Packages &amp; dimensions.</h3>
-    <p class="mn-hint" id="mn-s5-hint">We use weight and dimensions of each shipping package to work out service cost. Enter the package (not each item inside it).</p>
+  <!-- ===== STEP 3 &mdash; Nested cargo builder (Container > Package > Commodity) ===== -->
+  <div class="mn-step" data-step="3">
+    <h3 class="mn-q" id="mn-s3-title">Your cargo.</h3>
+    <p class="mn-hint" id="mn-s3-hint">Build your shipment the way it's packed. <span id="mn-hs-status" style="color:var(--amber)"></span></p>
 
     <!-- shipment-level controls -->
     <div class="mn-row-3" id="mn-ship-controls">
@@ -380,30 +373,9 @@
       </div>
     </div>
 
-    <!-- STANDARD package grid (non-domestic) -->
-    <div id="mn-pkg-standard" style="margin-top:18px">
-      <div class="mn-gridhead mn-pgrid-s">
-        <span>Package description</span><span>Qty</span><span>Weight (kg) <b>*</b></span>
-        <span>L <b>*</b></span><span>W <b>*</b></span><span>H <b>*</b></span><span></span>
-      </div>
-      <div id="mn-packages"><!-- package rows --></div>
-      <button class="mn-additem" id="mn-add-pkg" type="button">+ Add another package</button>
-    </div>
-
-    <!-- FCL container records -->
-    <div class="mn-cond" id="mn-fcl-wrap" style="margin-top:18px">
-      <span class="mn-flabel">Container records <span class="mn-tip">Sea FCL &mdash; add each container type, with its own freight cost.</span></span>
-      <div class="mn-gridhead mn-cgrid">
-        <span>Container type</span><span>Qty</span><span>Freight cost</span><span></span>
-      </div>
-      <div id="mn-containers"><!-- container rows --></div>
-      <button class="mn-additem" id="mn-add-container" type="button">+ Add another container</button>
-    </div>
-
-    <!-- DOMESTIC pricing capture -->
-    <div class="mn-cond" id="mn-domestic-wrap" style="margin-top:18px">
-      <span class="mn-flabel">Domestic transport details</span>
-      <div class="mn-row" style="margin-bottom:12px">
+    <!-- DOMESTIC transport details (only for Domestic Logistics) -->
+    <div class="mn-cond" id="mn-domestic-wrap" style="margin-top:16px">
+      <div class="mn-row">
         <div class="mn-fieldset" style="margin-bottom:0">
           <span class="mn-flabel">Transportation type</span>
           <select id="mn-transport-type">
@@ -420,19 +392,20 @@
           <input type="number" id="mn-dom-insurance" min="0" step="any" placeholder="e.g. 0.05" />
         </div>
       </div>
-      <span class="mn-flabel">Packages &mdash; with pickup &amp; delivery locations</span>
-      <div class="mn-gridhead mn-pgrid">
-        <span>ID</span><span>Description</span><span>Qty</span><span>Wt</span><span>L</span><span>W</span><span>H</span><span>Pickup location</span><span>Delivery location</span><span></span>
-      </div>
-      <div id="mn-dom-packages"><!-- domestic package rows --></div>
-      <button class="mn-additem" id="mn-add-dom-pkg" type="button">+ Add another package</button>
-      <p class="mn-hint" style="margin-top:10px; font-size:12px">Pickup and delivery charges are calculated by our team from these locations &mdash; one standard pickup, one standard delivery, plus an additional-location fee for each extra delivery point.</p>
     </div>
-    <p class="mn-err" id="mn-e5">Please complete weight and all three dimensions (L, W, H) for each package.</p>
+
+    <!-- the nested builder mounts here -->
+    <div id="mn-builder" style="margin-top:18px"></div>
+
+    <!-- top-level add button: adds a Container (FCL) or a Package (non-FCL) -->
+    <button class="mn-additem" id="mn-add-top" type="button">+ Add container</button>
+
+    <p class="mn-hint" style="margin-top:10px; font-size:12px" id="mn-builder-tip">Tip: open a container to add its packages, and open a package to add the commodities inside it. HS descriptions use official customs wording &mdash; if a keyword doesn't match, try the HS code digits.</p>
+    <p class="mn-err" id="mn-e3">Please add at least one commodity with its HS code, and complete each package's weight and dimensions.</p>
   </div>
 
-  <!-- ===== STEP 6 &mdash; Documents + Contact ===== -->
-  <div class="mn-step" data-step="6">
+  <!-- ===== STEP 4 &mdash; Documents + Contact ===== -->
+  <div class="mn-step" data-step="4">
     <h3 class="mn-q">Documents &amp; your details.</h3>
     <p class="mn-hint">Select any documents you have, then your contact details so we can send your quote.</p>
 
@@ -508,16 +481,17 @@
   var q = function(s,c){ return (c||root).querySelector(s); };
   var qa = function(s,c){ return Array.prototype.slice.call((c||root).querySelectorAll(s)); };
   function esc(s){ return String(s==null?'':s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}); }
+  function reportResize(){ try{ var h=root.getBoundingClientRect().height+40; if(window.parent && window.parent!==window){ window.parent.postMessage({mnQuoteHeight:Math.ceil(h)},'*'); } }catch(e){} }
 
   // ---- flow definition: which steps, in order ----
-  var FULL_FLOW = ['1','2','3','4','5','6'];
+  var FULL_FLOW = ['1','2','3','4'];
   var CONSULT_FLOW = ['1','C'];
-  var STEP_NAMES = {'1':'Service','2':'Route','3':'Cargo','4':'Commodities','5':'Packages','6':'Contact','C':'Consultation'};
+  var STEP_NAMES = {'1':'Service','2':'Cargo','3':'Shipment','4':'Contact','C':'Consultation'};
 
   var state = {
     direction:'', mode:'', modeOther:'', priority:'Normal', prefcontact:'WhatsApp',
     documents:[], cargoType:'', cargoTypeFields:{},
-    items:[], packages:[], containers:[], domPackages:[]
+    units:[] // nested: containers (FCL) or packages (non-FCL), built live from DOM at submit
   };
   var flow = FULL_FLOW, curIdx = 0;
 
@@ -616,7 +590,7 @@
     // Consultation → switch to consult flow
     if(state.direction==='Consultation'){ flow = CONSULT_FLOW; }
     else { flow = FULL_FLOW; }
-    $('mn-total').textContent = (flow===CONSULT_FLOW) ? '2' : '6';
+    $('mn-total').textContent = (flow===CONSULT_FLOW) ? '2' : '4';
 
     // freight mode + category visibility
     var isConsult = state.direction==='Consultation';
@@ -634,21 +608,24 @@
 
   function onMode(){
     $('mn-mode-other-wrap').classList.toggle('mn-show', state.mode==='Other');
-    // packaging options
-    var sel = $('mn-packaging'); var opts = PACKAGING[state.mode];
-    sel.innerHTML = opts ? '<option value="">Select…</option>'+opts.map(function(o){return '<option>'+esc(o)+'</option>';}).join('') : '<option value="">Select freight mode first…</option>';
-    // FCL container records vs standard packages vs domestic
-    updateStep5Mode();
+    updateBuilderMode();
   }
 
-  function updateStep5Mode(){
-    var isFCL = state.mode==='Sea FCL';
-    var isDomestic = state.direction==='Domestic Logistics';
-    $('mn-fcl-wrap').classList.toggle('mn-show', isFCL);
-    $('mn-domestic-wrap').classList.toggle('mn-show', isDomestic);
-    // standard package grid hidden for domestic (domestic has its own package grid)
-    $('mn-pkg-standard').style.display = isDomestic ? 'none' : '';
-    $('mn-s5-title').textContent = isDomestic ? 'Packages, pickup & delivery.' : 'Packages & dimensions.';
+  function isFCL(){ return state.mode==='Sea FCL'; }
+  function isDomestic(){ return state.direction==='Domestic Logistics'; }
+
+  function updateBuilderMode(){
+    var dom = isDomestic();
+    $('mn-domestic-wrap').classList.toggle('mn-show', dom);
+    // top add button label + tip depend on whether we nest under a container
+    var addBtn = $('mn-add-top');
+    if(isFCL()){
+      addBtn.textContent = '+ Add container';
+      $('mn-builder-tip').innerHTML = 'Tip: open a container to add its packages, and open a package to add the commodities inside it. HS descriptions use official customs wording &mdash; if a keyword doesn\'t match, try the HS code digits.';
+    } else {
+      addBtn.textContent = '+ Add package';
+      $('mn-builder-tip').innerHTML = 'Tip: open a package to add the commodities inside it. HS descriptions use official customs wording &mdash; if a keyword doesn\'t match, try the HS code digits.';
+    }
   }
 
   // ================= cargo type conditional =================
@@ -659,7 +636,7 @@
       var html = '<div class="'+(fields.length>1?'mn-row':'')+'">';
       html += fields.map(function(f){
         if(f.type==='select'){
-          return '<div class="mn-fieldset" style="margin-bottom:8px"><span class="mn-flabel">'+esc(f.label)+'</span><select data-cf="'+f.k+'"><option value="">Select…</option>'+f.opts.map(function(o){return '<option>'+esc(o)+'</option>';}).join('')+'</select></div>';
+          return '<div class="mn-fieldset" style="margin-bottom:8px"><span class="mn-flabel">'+esc(f.label)+'</span><select data-cf="'+f.k+'"><option value="">Select\u2026</option>'+f.opts.map(function(o){return '<option>'+esc(o)+'</option>';}).join('')+'</select></div>';
         }
         return '<div class="mn-fieldset" style="margin-bottom:8px"><span class="mn-flabel">'+esc(f.label)+'</span><input type="text" data-cf="'+f.k+'" placeholder="'+esc(f.ph||'')+'" /></div>';
       }).join('');
@@ -669,8 +646,49 @@
     } else { host.innerHTML=''; cond.classList.remove('mn-show'); }
   });
 
-  // ================= item grid (commodities) =================
-  function itemRow(it){
+  // ================= NESTED CARGO BUILDER (Container > Package > Commodity) =================
+  // HS search attaches to any commodity row's description input.
+  function attachHsSearch(wrap){
+    var descIn = wrap.querySelector('[data-i="desc"]');
+    var hsHidden = wrap.querySelector('[data-i="hs"]');
+    var hsShow = wrap.querySelector('[data-i="hsshow"]');
+    var dutyH=wrap.querySelector('[data-i="duty"]'), vatH=wrap.querySelector('[data-i="vat"]'), iatH=wrap.querySelector('[data-i="iat"]'), excH=wrap.querySelector('[data-i="exc"]');
+    var results = wrap.querySelector('.mn-hsresults');
+    var hiIndex = -1, current = [];
+    function renderResults(list){
+      current = list; hiIndex = -1;
+      if(!list.length){ results.classList.remove('mn-show'); results.innerHTML=''; return; }
+      results.innerHTML = list.map(function(e,idx){
+        var banned = (e.active && e.active.toLowerCase()==='banned');
+        return '<div class="mn-hsitem" data-idx="'+idx+'"><span class="mn-hscode">'+esc(e.c)+'</span><span class="mn-hsdesc">'+esc(e.d)+'</span>'+(banned?'<span class="mn-banned">restricted</span>':'')+'</div>';
+      }).join('');
+      results.classList.add('mn-show');
+    }
+    function choose(e){
+      descIn.value = e.d; hsHidden.value = e.c; hsShow.value = e.c;
+      dutyH.value = e.duty!=null?e.duty:''; vatH.value = e.vat!=null?e.vat:''; iatH.value=e.iat!=null?e.iat:''; excH.value=e.exc!=null?e.exc:'';
+      results.classList.remove('mn-show');
+    }
+    descIn.addEventListener('input', function(){ hsHidden.value=''; renderResults(hsSearch(descIn.value)); });
+    descIn.addEventListener('keydown', function(ev){
+      if(!results.classList.contains('mn-show')) return;
+      var items = qa('.mn-hsitem', results);
+      if(ev.key==='ArrowDown'){ ev.preventDefault(); hiIndex=Math.min(items.length-1,hiIndex+1); }
+      else if(ev.key==='ArrowUp'){ ev.preventDefault(); hiIndex=Math.max(0,hiIndex-1); }
+      else if(ev.key==='Enter'){ ev.preventDefault(); if(hiIndex>=0&&current[hiIndex]) choose(current[hiIndex]); return; }
+      else return;
+      items.forEach(function(el,i){ el.classList.toggle('mn-hi', i===hiIndex); });
+      if(items[hiIndex]) items[hiIndex].scrollIntoView({block:'nearest'});
+    });
+    results.addEventListener('click', function(ev){ var it2 = ev.target.closest('.mn-hsitem'); if(!it2) return; choose(current[+it2.getAttribute('data-idx')]); });
+    hsShow.addEventListener('input', function(){ hsHidden.value = hsShow.value.trim(); });
+    descIn.addEventListener('blur', function(){ setTimeout(function(){ results.classList.remove('mn-show'); }, 180); });
+  }
+
+  var chevron = '<svg class="mn-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="6 9 12 15 18 9"/></svg>';
+
+  // ---- Commodity row (deepest level) ----
+  function commodityRow(it){
     it = it||{};
     var wrap = document.createElement('div'); wrap.className='mn-gitem mn-igrid';
     wrap.innerHTML =
@@ -686,152 +704,152 @@
       '<label><span>HS code <b>*</b></span><input type="text" data-i="hsshow" inputmode="numeric" placeholder="auto-fills" value="'+esc(it.hs||'')+'" /></label>'+
       '<label><span>Value</span><input type="number" data-i="value" min="0" step="any" placeholder="0.00" value="'+esc(it.value!=null?it.value:'')+'" /></label>'+
       '<label><span>Qty</span><input type="number" data-i="qty" min="1" step="1" value="'+esc(it.qty||1)+'" /></label>'+
-      '<button class="mn-grm" type="button" title="Remove">×</button>';
-
-    var descIn = wrap.querySelector('[data-i="desc"]');
-    var hsHidden = wrap.querySelector('[data-i="hs"]');
-    var hsShow = wrap.querySelector('[data-i="hsshow"]');
-    var dutyH=wrap.querySelector('[data-i="duty"]'), vatH=wrap.querySelector('[data-i="vat"]'), iatH=wrap.querySelector('[data-i="iat"]'), excH=wrap.querySelector('[data-i="exc"]');
-    var results = wrap.querySelector('.mn-hsresults');
-    var hiIndex = -1, current = [];
-
-    function renderResults(list){
-      current = list; hiIndex = -1;
-      if(!list.length){ results.classList.remove('mn-show'); results.innerHTML=''; return; }
-      results.innerHTML = list.map(function(e,idx){
-        var banned = (e.active && e.active.toLowerCase()==='banned');
-        return '<div class="mn-hsitem" data-idx="'+idx+'"><span class="mn-hscode">'+esc(e.c)+'</span><span class="mn-hsdesc">'+esc(e.d)+'</span>'+(banned?'<span class="mn-banned">restricted</span>':'')+'</div>';
-      }).join('');
-      results.classList.add('mn-show');
-    }
-    function choose(e){
-      descIn.value = e.d; hsHidden.value = e.c; hsShow.value = e.c;
-      dutyH.value = e.duty!=null?e.duty:''; vatH.value = e.vat!=null?e.vat:''; iatH.value=e.iat!=null?e.iat:''; excH.value=e.exc!=null?e.exc:'';
-      results.classList.remove('mn-show');
-    }
-    descIn.addEventListener('input', function(){
-      hsHidden.value=''; // typing invalidates prior pick until reselected
-      renderResults(hsSearch(descIn.value));
-    });
-    descIn.addEventListener('keydown', function(ev){
-      if(!results.classList.contains('mn-show')) return;
-      var items = qa('.mn-hsitem', results);
-      if(ev.key==='ArrowDown'){ ev.preventDefault(); hiIndex=Math.min(items.length-1,hiIndex+1); }
-      else if(ev.key==='ArrowUp'){ ev.preventDefault(); hiIndex=Math.max(0,hiIndex-1); }
-      else if(ev.key==='Enter'){ ev.preventDefault(); if(hiIndex>=0&&current[hiIndex]) choose(current[hiIndex]); return; }
-      else return;
-      items.forEach(function(el,i){ el.classList.toggle('mn-hi', i===hiIndex); });
-      if(items[hiIndex]) items[hiIndex].scrollIntoView({block:'nearest'});
-    });
-    results.addEventListener('click', function(ev){
-      var it2 = ev.target.closest('.mn-hsitem'); if(!it2) return;
-      choose(current[+it2.getAttribute('data-idx')]);
-    });
-    // allow manual HS typing in the code box (fallback)
-    hsShow.addEventListener('input', function(){ hsHidden.value = hsShow.value.trim(); });
-    descIn.addEventListener('blur', function(){ setTimeout(function(){ results.classList.remove('mn-show'); }, 180); });
-
-    wrap.querySelector('.mn-grm').addEventListener('click', function(){
-      var host=$('mn-items');
-      if(host.children.length>1) wrap.remove();
-      else qa('input',wrap).forEach(function(i){ i.value = i.getAttribute('data-i')==='qty'?'1':''; });
-    });
+      '<button class="mn-grm" type="button" title="Remove commodity">\u00d7</button>';
+    attachHsSearch(wrap);
+    wrap.querySelector('.mn-grm').addEventListener('click', function(){ wrap.remove(); reportResize(); });
     return wrap;
   }
-  $('mn-add-item').addEventListener('click', function(){ $('mn-items').appendChild(itemRow()); });
 
-  function readItems(){
-    return qa('#mn-items .mn-gitem').map(function(row){
-      var g=function(f){var el=row.querySelector('[data-i="'+f+'"]');return el?el.value.trim():'';};
-      var num=function(f){var n=parseFloat(g(f));return isFinite(n)?n:0;};
-      if(!g('desc') && !g('hs') && !g('value')) return null;
-      return {desc:g('desc'), hs:g('hs')||g('hsshow'), value:num('value'), qty:Math.max(1,Math.floor(num('qty'))||1),
-              duty:num('duty'), vat:num('vat'), iat:num('iat'), exc:num('exc')};
-    }).filter(Boolean);
+  // ---- Package card (mid level; holds commodities) ----
+  var pkgSeq=0;
+  function packageCard(p){
+    p=p||{}; pkgSeq++;
+    var dom = isDomestic();
+    var card=document.createElement('div'); card.className='mn-node mn-node-pkg';
+    // package-type options: for FCL use general package types (not container types); else the mode's packaging list
+    var pkgOpts = isFCL() ? ["Cartons","Pallets","Drums","Crates","Bags / Sacks","Loose / Break-bulk","Other"] : (PACKAGING[state.mode] || ["Cartons","Pallets","Crates","Drums","Loose","Other"]);
+    card.innerHTML =
+      '<div class="mn-node-head" data-role="pkg-head">'+
+        '<span class="mn-node-toggle">'+chevron+'</span>'+
+        '<span class="mn-node-title">Package</span>'+
+        '<span class="mn-node-sum" data-role="pkg-sum"></span>'+
+        '<button class="mn-node-rm" type="button" title="Remove package">Remove</button>'+
+      '</div>'+
+      '<div class="mn-node-body">'+
+        '<div class="mn-row-3">'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Package type</span>'+
+            '<select data-p="ptype"><option value="">Select\u2026</option>'+pkgOpts.map(function(o){return '<option'+(p.ptype===o?' selected':'')+'>'+esc(o)+'</option>';}).join('')+'</select></div>'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Description <span class="mn-opt">optional</span></span><input type="text" data-p="desc" placeholder="e.g. Pallet of electronics" value="'+esc(p.desc||'')+'" /></div>'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Qty</span><input type="number" data-p="qty" min="1" value="'+esc(p.qty||1)+'" /></div>'+
+        '</div>'+
+        '<div class="mn-row-4">'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Weight (kg) <b style="color:var(--amber)">*</b></span><input type="number" data-p="weight" min="0" step="any" placeholder="0" value="'+esc(p.weight!=null?p.weight:'')+'" /></div>'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">L <b style="color:var(--amber)">*</b></span><input type="number" data-p="l" min="0" step="any" placeholder="0" value="'+esc(p.l!=null?p.l:'')+'" /></div>'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">W <b style="color:var(--amber)">*</b></span><input type="number" data-p="w" min="0" step="any" placeholder="0" value="'+esc(p.w!=null?p.w:'')+'" /></div>'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">H <b style="color:var(--amber)">*</b></span><input type="number" data-p="h" min="0" step="any" placeholder="0" value="'+esc(p.h!=null?p.h:'')+'" /></div>'+
+        '</div>'+
+        (dom ? '<div class="mn-row"><div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Pickup location</span><input type="text" data-p="pickup" placeholder="e.g. Warehouse A" value="'+esc(p.pickup||'')+'" /></div><div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Delivery location</span><input type="text" data-p="delivery" placeholder="e.g. Location B" value="'+esc(p.delivery||'')+'" /></div></div>' : '')+
+        '<div class="mn-sub">'+
+          '<div class="mn-sub-label">Commodities in this package</div>'+
+          '<div class="mn-gridhead mn-igrid"><span>Commodity (search HS code / name) <b>*</b></span><span>HS code <b>*</b></span><span>Value</span><span>Qty</span><span></span></div>'+
+          '<div data-role="commodities"></div>'+
+          '<button class="mn-additem mn-add-commodity" type="button">+ Add commodity</button>'+
+        '</div>'+
+      '</div>';
+    var body = card.querySelector('.mn-node-body');
+    var head = card.querySelector('[data-role="pkg-head"]');
+    var commHost = card.querySelector('[data-role="commodities"]');
+    var sum = card.querySelector('[data-role="pkg-sum"]');
+    function updateSum(){
+      var t=card.querySelector('[data-p="ptype"]').value;
+      var n=commHost.children.length;
+      sum.textContent = (t?t:'Package') + ' \u00b7 ' + n + ' item' + (n===1?'':'s');
+    }
+    head.addEventListener('click', function(e){ if(e.target.closest('.mn-node-rm')) return; card.classList.toggle('mn-collapsed'); reportResize(); });
+    card.querySelector('.mn-node-rm').addEventListener('click', function(){ card.remove(); reportResize(); });
+    card.querySelector('.mn-add-commodity').addEventListener('click', function(){ commHost.appendChild(commodityRow()); updateSum(); reportResize(); });
+    card.querySelector('[data-p="ptype"]').addEventListener('change', updateSum);
+    // seed initial commodities
+    (p.commodities && p.commodities.length ? p.commodities : [null]).forEach(function(c){ commHost.appendChild(commodityRow(c)); });
+    updateSum();
+    return card;
   }
 
-  // ================= package grid (standard) =================
-  function pkgRow(p){
-    p=p||{};
-    var wrap=document.createElement('div'); wrap.className='mn-gitem mn-pgrid-s';
-    wrap.innerHTML =
-      '<label class="mn-gspan"><span>Package description</span><input type="text" data-p="desc" placeholder="e.g. Pallet of electronics" value="'+esc(p.desc||'')+'" /></label>'+
-      '<label><span>Qty</span><input type="number" data-p="qty" min="1" value="'+esc(p.qty||1)+'" /></label>'+
-      '<label><span>Weight (kg) <b>*</b></span><input type="number" data-p="weight" min="0" step="any" placeholder="0" value="'+esc(p.weight!=null?p.weight:'')+'" /></label>'+
-      '<label><span>L <b>*</b></span><input type="number" data-p="l" min="0" step="any" placeholder="0" value="'+esc(p.l!=null?p.l:'')+'" /></label>'+
-      '<label><span>W <b>*</b></span><input type="number" data-p="w" min="0" step="any" placeholder="0" value="'+esc(p.w!=null?p.w:'')+'" /></label>'+
-      '<label><span>H <b>*</b></span><input type="number" data-p="h" min="0" step="any" placeholder="0" value="'+esc(p.h!=null?p.h:'')+'" /></label>'+
-      '<button class="mn-grm" type="button" title="Remove">×</button>';
-    wrap.querySelector('.mn-grm').addEventListener('click', function(){
-      var host=$('mn-packages'); if(host.children.length>1) wrap.remove();
-      else qa('input',wrap).forEach(function(i){ i.value = i.getAttribute('data-p')==='qty'?'1':''; });
-    });
-    return wrap;
-  }
-  $('mn-add-pkg').addEventListener('click', function(){ $('mn-packages').appendChild(pkgRow()); });
-  function readPackages(){
-    return qa('#mn-packages .mn-gitem').map(function(row){
-      var g=function(f){var el=row.querySelector('[data-p="'+f+'"]');return el?el.value.trim():'';};
-      var num=function(f){var n=parseFloat(g(f));return isFinite(n)?n:0;};
-      if(!g('desc')&&!g('weight')&&!g('l')&&!g('w')&&!g('h')) return null;
-      return {desc:g('desc'), qty:Math.max(1,Math.floor(num('qty'))||1), weight:num('weight'), length:num('l'), width:num('w'), height:num('h')};
-    }).filter(Boolean);
-  }
-
-  // ================= container records (FCL) =================
-  function containerRow(c){
+  // ---- Container card (top level, FCL only; holds packages) ----
+  function containerCard(c){
     c=c||{};
-    var wrap=document.createElement('div'); wrap.className='mn-gitem mn-cgrid';
-    wrap.innerHTML =
-      '<label class="mn-gspan"><span>Container type</span><select data-c="type"><option value="">Select…</option>'+CONTAINER_TYPES.map(function(t){return '<option'+(c.type===t?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></label>'+
-      '<label><span>Qty</span><input type="number" data-c="qty" min="1" value="'+esc(c.qty||1)+'" /></label>'+
-      '<label><span>Freight cost</span><input type="number" data-c="freight" min="0" step="any" placeholder="0.00" value="'+esc(c.freight!=null?c.freight:'')+'" /></label>'+
-      '<button class="mn-grm" type="button" title="Remove">×</button>';
-    wrap.querySelector('.mn-grm').addEventListener('click', function(){
-      var host=$('mn-containers'); if(host.children.length>1) wrap.remove(); else qa('input,select',wrap).forEach(function(i){ i.value = i.getAttribute('data-c')==='qty'?'1':''; });
-    });
-    return wrap;
-  }
-  $('mn-add-container').addEventListener('click', function(){ $('mn-containers').appendChild(containerRow()); });
-  function readContainers(){
-    return qa('#mn-containers .mn-gitem').map(function(row){
-      var g=function(f){var el=row.querySelector('[data-c="'+f+'"]');return el?el.value.trim():'';};
-      var num=function(f){var n=parseFloat(g(f));return isFinite(n)?n:0;};
-      if(!g('type')&&!g('freight')) return null;
-      return {type:g('type'), qty:Math.max(1,Math.floor(num('qty'))||1), freight:num('freight')};
-    }).filter(Boolean);
+    var card=document.createElement('div'); card.className='mn-node mn-node-ctr';
+    card.innerHTML =
+      '<div class="mn-node-head" data-role="ctr-head">'+
+        '<span class="mn-node-toggle">'+chevron+'</span>'+
+        '<span class="mn-node-title">Container</span>'+
+        '<span class="mn-node-sum" data-role="ctr-sum"></span>'+
+        '<button class="mn-node-rm" type="button" title="Remove container">Remove</button>'+
+      '</div>'+
+      '<div class="mn-node-body">'+
+        '<div class="mn-row">'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Container type</span>'+
+            '<select data-c="type"><option value="">Select\u2026</option>'+CONTAINER_TYPES.map(function(t){return '<option'+(c.type===t?' selected':'')+'>'+esc(t)+'</option>';}).join('')+'</select></div>'+
+          '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Freight cost <span class="mn-opt">this container</span></span><input type="number" data-c="freight" min="0" step="any" placeholder="0.00" value="'+esc(c.freight!=null?c.freight:'')+'" /></div>'+
+        '</div>'+
+        '<div class="mn-sub">'+
+          '<div class="mn-sub-label">Packages in this container</div>'+
+          '<div data-role="packages"></div>'+
+          '<button class="mn-additem mn-add-package" type="button">+ Add package</button>'+
+        '</div>'+
+      '</div>';
+    var head=card.querySelector('[data-role="ctr-head"]');
+    var pkgHost=card.querySelector('[data-role="packages"]');
+    var sum=card.querySelector('[data-role="ctr-sum"]');
+    function updateSum(){ var t=card.querySelector('[data-c="type"]').value; var n=pkgHost.children.length; sum.textContent=(t?t:'Container')+' \u00b7 '+n+' package'+(n===1?'':'s'); }
+    head.addEventListener('click', function(e){ if(e.target.closest('.mn-node-rm')) return; card.classList.toggle('mn-collapsed'); reportResize(); });
+    card.querySelector('.mn-node-rm').addEventListener('click', function(){ card.remove(); reportResize(); });
+    card.querySelector('.mn-add-package').addEventListener('click', function(){ pkgHost.appendChild(packageCard()); updateSum(); reportResize(); });
+    card.querySelector('[data-c="type"]').addEventListener('change', updateSum);
+    (c.packages && c.packages.length ? c.packages : [null]).forEach(function(pp){ pkgHost.appendChild(packageCard(pp)); });
+    updateSum();
+    return card;
   }
 
-  // ================= domestic packages =================
-  var domSeq=0;
-  function domRow(p){
-    p=p||{}; domSeq++; var id=p.id||('P'+domSeq);
-    var wrap=document.createElement('div'); wrap.className='mn-gitem mn-pgrid';
-    wrap.innerHTML =
-      '<label><span>ID</span><input type="text" data-d="id" value="'+esc(id)+'" style="opacity:.7" /></label>'+
-      '<label class="mn-gspan"><span>Description</span><input type="text" data-d="desc" placeholder="Package description" value="'+esc(p.desc||'')+'" /></label>'+
-      '<label><span>Qty</span><input type="number" data-d="qty" min="1" value="'+esc(p.qty||1)+'" /></label>'+
-      '<label><span>Wt</span><input type="number" data-d="weight" min="0" step="any" placeholder="kg" value="'+esc(p.weight!=null?p.weight:'')+'" /></label>'+
-      '<label><span>L</span><input type="number" data-d="l" min="0" step="any" placeholder="0" value="'+esc(p.l!=null?p.l:'')+'" /></label>'+
-      '<label><span>W</span><input type="number" data-d="w" min="0" step="any" placeholder="0" value="'+esc(p.w!=null?p.w:'')+'" /></label>'+
-      '<label><span>H</span><input type="number" data-d="h" min="0" step="any" placeholder="0" value="'+esc(p.h!=null?p.h:'')+'" /></label>'+
-      '<label><span>Pickup location</span><input type="text" data-d="pickup" placeholder="e.g. Warehouse A" value="'+esc(p.pickup||'')+'" /></label>'+
-      '<label><span>Delivery location</span><input type="text" data-d="delivery" placeholder="e.g. Location B" value="'+esc(p.delivery||'')+'" /></label>'+
-      '<button class="mn-grm" type="button" title="Remove">×</button>';
-    wrap.querySelector('.mn-grm').addEventListener('click', function(){
-      var host=$('mn-dom-packages'); if(host.children.length>1) wrap.remove(); else qa('input',wrap).forEach(function(i){ if(i.getAttribute('data-d')!=='id') i.value = i.getAttribute('data-d')==='qty'?'1':''; });
-    });
-    return wrap;
+  // ---- top-level add + seeding ----
+  function addTopUnit(){
+    var host=$('mn-builder');
+    if(isFCL()) host.appendChild(containerCard());
+    else host.appendChild(packageCard());
+    reportResize();
   }
-  $('mn-add-dom-pkg').addEventListener('click', function(){ $('mn-dom-packages').appendChild(domRow()); });
-  function readDomPackages(){
-    return qa('#mn-dom-packages .mn-gitem').map(function(row){
-      var g=function(f){var el=row.querySelector('[data-d="'+f+'"]');return el?el.value.trim():'';};
-      var num=function(f){var n=parseFloat(g(f));return isFinite(n)?n:0;};
-      if(!g('desc')&&!g('weight')&&!g('pickup')&&!g('delivery')) return null;
-      return {id:g('id'), desc:g('desc'), qty:Math.max(1,Math.floor(num('qty'))||1), weight:num('weight'), length:num('l'), width:num('w'), height:num('h'), pickupLocation:g('pickup'), deliveryLocation:g('delivery')};
+  $('mn-add-top').addEventListener('click', addTopUnit);
+
+  function seedBuilder(){
+    var host=$('mn-builder');
+    host.innerHTML='';
+    addTopUnit();
+  }
+
+  // ---- read the nested tree into a payload structure ----
+  function readPackageCard(card){
+    var g=function(f){var el=card.querySelector(':scope > .mn-node-body [data-p="'+f+'"]');return el?el.value.trim():'';};
+    // note: commodity inputs also live in body; select package fields directly (they are the [data-p] ones)
+    var pget=function(f){var el=card.querySelector('.mn-node-body > .mn-row-3 [data-p="'+f+'"], .mn-node-body > .mn-row-4 [data-p="'+f+'"], .mn-node-body > .mn-row [data-p="'+f+'"]');return el?el.value.trim():'';};
+    var num=function(v){var n=parseFloat(v);return isFinite(n)?n:0;};
+    var commodities = qa('[data-role="commodities"] > .mn-gitem', card).map(function(row){
+      var cg=function(f){var el=row.querySelector('[data-i="'+f+'"]');return el?el.value.trim():'';};
+      var cnum=function(f){var n=parseFloat(cg(f));return isFinite(n)?n:0;};
+      if(!cg('desc') && !cg('hs') && !cg('hsshow') && !cg('value')) return null;
+      return {desc:cg('desc'), hs:cg('hs')||cg('hsshow'), value:cnum('value'), qty:Math.max(1,Math.floor(cnum('qty'))||1), duty:cnum('duty'), vat:cnum('vat'), iat:cnum('iat'), exc:cnum('exc')};
     }).filter(Boolean);
+    var obj = {
+      packageType:pget('ptype'), description:pget('desc'), qty:Math.max(1,Math.floor(num(pget('qty')))||1),
+      weight:num(pget('weight')), length:num(pget('l')), width:num(pget('w')), height:num(pget('h')),
+      commodities:commodities
+    };
+    if(isDomestic()){ obj.pickupLocation=pget('pickup'); obj.deliveryLocation=pget('delivery'); }
+    return obj;
   }
+  function readBuilder(){
+    var host=$('mn-builder');
+    if(isFCL()){
+      return { level:'container', containers: qa(':scope > .mn-node-ctr', host).map(function(card){
+        var cg=function(f){var el=card.querySelector('.mn-node-body > .mn-row [data-c="'+f+'"]');return el?el.value.trim():'';};
+        var num=function(v){var n=parseFloat(v);return isFinite(n)?n:0;};
+        var packages = qa('[data-role="packages"] > .mn-node-pkg', card).map(readPackageCard);
+        return { type:cg('type'), freight:num(cg('freight')), packages:packages };
+      }) };
+    } else {
+      return { level:'package', packages: qa(':scope > .mn-node-pkg', host).map(readPackageCard) };
+    }
+  }
+
 
   // ================= navigation =================
   function showStep(stepId){
@@ -846,8 +864,8 @@
     $('mn-back').style.visibility = pos>0 ? 'visible':'hidden';
     var last = pos===flow.length-1;
     $('mn-next').innerHTML = last ? 'Submit request \u2192' : 'Continue \u2192';
-    if(stepId==='4' && !$('mn-items').children.length) $('mn-items').appendChild(itemRow());
-    if(stepId==='5'){ updateStep5Mode(); if(!$('mn-packages').children.length) $('mn-packages').appendChild(pkgRow()); if(!$('mn-containers').children.length) $('mn-containers').appendChild(containerRow()); if(!$('mn-dom-packages').children.length) $('mn-dom-packages').appendChild(domRow()); }
+    if(stepId==='1'){ updateBuilderMode(); }
+    if(stepId==='3'){ updateBuilderMode(); if(!$('mn-builder').children.length) seedBuilder(); }
     root.scrollIntoView({behavior:'smooth',block:'start'});
   }
   function renderStepCircles(pos){
@@ -866,7 +884,16 @@
 
   function validate(stepId){
     clearErr();
-    if(stepId==='1'){ if(!state.direction) { showErr('mn-e1'); return false; } if(state.direction!=='Consultation' && !state.mode){ showErr('mn-e1'); return false; } }
+    if(stepId==='1'){
+      if(!state.direction) { showErr('mn-e1'); return false; }
+      if(state.direction==='Consultation') return true;
+      var bad=false;
+      if(!state.mode){ bad=true; }
+      var o=$('mn-origin'),d=$('mn-dest');
+      if(!o.value.trim()){o.classList.add('mn-bad');bad=true;}
+      if(!d.value.trim()){d.classList.add('mn-bad');bad=true;}
+      if(bad){ showErr('mn-e1'); return false; }
+    }
     if(stepId==='C'){
       var m=$('mn-consult-msg'), n=$('mn-c-name'), em=$('mn-c-email'), cs=$('mn-c-consent'), bad=false;
       if(!m.value.trim()){ m.classList.add('mn-bad'); bad=true; }
@@ -875,35 +902,32 @@
       if(!cs.checked) bad=true;
       if(bad){ showErr('mn-eC'); return false; }
     }
-    if(stepId==='2'){ var o=$('mn-origin'),d=$('mn-dest'),bad=false; if(!o.value.trim()){o.classList.add('mn-bad');bad=true;} if(!d.value.trim()){d.classList.add('mn-bad');bad=true;} if(bad){showErr('mn-e2');return false;} }
+    // step 2 (cargo overview) has no required fields
+    if(stepId==='3'){
+      // validate the nested builder: at least one commodity with HS, and every package has weight + dims
+      var host=$('mn-builder'); var bad=false, anyCommodity=false, anyPackage=false;
+      // all package cards anywhere in the tree
+      var pkgCards = qa('.mn-node-pkg', host);
+      pkgCards.forEach(function(card){
+        anyPackage=true;
+        ['weight','l','w','h'].forEach(function(f){
+          var el=card.querySelector('.mn-node-body > .mn-row-3 [data-p="'+f+'"], .mn-node-body > .mn-row-4 [data-p="'+f+'"]');
+          if(el && !(parseFloat(el.value)>0)){ el.classList.add('mn-bad'); bad=true; }
+        });
+        // commodities within this package
+        qa('[data-role="commodities"] > .mn-gitem', card).forEach(function(row){
+          var desc=row.querySelector('[data-i="desc"]').value.trim();
+          var hs=(row.querySelector('[data-i="hs"]').value||row.querySelector('[data-i="hsshow"]').value).trim();
+          if(!desc && !hs) return; anyCommodity=true;
+          if(!hs){ row.querySelector('[data-i="hsshow"]').classList.add('mn-bad'); bad=true; }
+        });
+      });
+      if(!anyPackage){ bad=true; }
+      if(!anyCommodity){ bad=true; }
+      if(bad){ showErr('mn-e3'); return false; }
+      state.units = readBuilder();
+    }
     if(stepId==='4'){
-      var rows=qa('#mn-items .mn-gitem'), any=false, bad=false;
-      rows.forEach(function(row){
-        var desc=row.querySelector('[data-i="desc"]').value.trim();
-        var hs=(row.querySelector('[data-i="hs"]').value||row.querySelector('[data-i="hsshow"]').value).trim();
-        if(!desc && !hs) return; any=true;
-        if(!hs){ row.querySelector('[data-i="hsshow"]').classList.add('mn-bad'); bad=true; }
-      });
-      if(!any){ $('#mn-items .mn-gitem [data-i="desc"]') && qa('#mn-items [data-i="desc"]')[0].classList.add('mn-bad'); bad=true; }
-      if(bad){ showErr('mn-e4'); return false; }
-      state.items = readItems();
-    }
-    if(stepId==='5'){
-      var isDomestic = state.direction==='Domestic Logistics';
-      var sel = isDomestic ? '#mn-dom-packages .mn-gitem' : '#mn-packages .mn-gitem';
-      var pfx = isDomestic ? 'd' : 'p';
-      var rows=qa(sel), any=false, bad=false;
-      rows.forEach(function(row){
-        var g=function(f){var el=row.querySelector('['+'data-'+pfx+'="'+f+'"]');return el?el.value.trim():'';};
-        var has = g('desc')||g('weight')||g('l')||g('w')||g('h');
-        if(!has) return; any=true;
-        ['weight','l','w','h'].forEach(function(f){ var el=row.querySelector('[data-'+pfx+'="'+f+'"]'); if(el && !(parseFloat(el.value)>0)){ el.classList.add('mn-bad'); bad=true; } });
-      });
-      if(!any){ bad=true; }
-      if(bad){ showErr('mn-e5'); return false; }
-      state.packages = readPackages(); state.containers = readContainers(); state.domPackages = readDomPackages();
-    }
-    if(stepId==='6'){
       var name=$('mn-name'),email=$('mn-email'),phone=$('mn-phone'),consent=$('mn-consent'),bad=false;
       if(!name.value.trim()){name.classList.add('mn-bad');bad=true;}
       if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.value.trim())){email.classList.add('mn-bad');bad=true;}
@@ -918,8 +942,8 @@
   $('mn-next').addEventListener('click', function(){
     var stepId = flow[curIdx];
     if(!validate(stepId)) return;
-    // collect cargo-type conditional fields when leaving step 3
-    if(stepId==='3'){ state.cargoTypeFields={}; qa('[data-cf]').forEach(function(el){ state.cargoTypeFields[el.getAttribute('data-cf')] = el.value.trim(); }); }
+    // collect cargo-type conditional fields when leaving step 2 (cargo overview)
+    if(stepId==='2'){ state.cargoTypeFields={}; qa('[data-cf]').forEach(function(el){ state.cargoTypeFields[el.getAttribute('data-cf')] = el.value.trim(); }); }
     if(curIdx < flow.length-1){ curIdx++; showStep(flow[curIdx]); }
     else { submit(stepId); }
   });
@@ -937,22 +961,24 @@
       };
     }
     var isDomestic = state.direction==='Domestic Logistics';
-    return {
+    var units = state.units || {level:'package',packages:[]};
+    var payload = {
       source:"Matnode Website \u2014 Quote Request", submittedAt:new Date().toISOString(), requestType:"Quote",
       name:val('mn-name'), company:val('mn-company'), email:val('mn-email'), phone:val('mn-phone'), preferredContact:state.prefcontact,
       direction:state.direction, mode:state.mode, modeOther:state.modeOther||val('mn-mode-other'),
       serviceCategory:val('mn-category'), subService:val('mn-subservice'), incoterms:val('mn-incoterms'), priority:state.priority,
       origin:val('mn-origin'), destination:val('mn-dest'), cargoReadyDate:val('mn-ready'), deliveryDate:val('mn-deliverydate'),
-      cargoType:state.cargoType, cargoTypeDetails:state.cargoTypeFields, packaging:val('mn-packaging'),
+      cargoType:state.cargoType, cargoTypeDetails:state.cargoTypeFields,
       requirements:{ handling:val('mn-req-handling'), transportation:val('mn-req-transport'), storage:val('mn-req-storage'), packaging:val('mn-req-packaging'), special:val('mn-req-special') },
       currency:val('mn-ccy'), totalFreight:val('mn-freight'), dimensionUnit:val('mn-unit'),
-      commodities:state.items,
-      packages: isDomestic ? state.domPackages : state.packages,
-      containers:state.containers,
+      cargoStructure: units.level,           // "container" (FCL) or "package" (all other modes)
+      containers: units.level==='container' ? units.containers : [],
+      packages: units.level==='package' ? units.packages : [],
       domestic: isDomestic ? { transportationType:val('mn-transport-type'), insurancePremium:val('mn-dom-insurance') } : null,
       documentsAvailable:state.documents,
       leadTags:[state.direction, state.mode, state.priority].filter(Boolean)
     };
+    return payload;
   }
 
   function submit(stepId){
