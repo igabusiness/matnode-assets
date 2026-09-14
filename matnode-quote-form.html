@@ -364,8 +364,8 @@
         <select id="mn-ccy"><option>USD</option><option>NGN</option><option>EUR</option><option>GBP</option><option>CNY</option></select>
       </div>
       <div class="mn-fieldset" style="margin-bottom:0">
-        <span class="mn-flabel">Total freight cost <span class="mn-opt">optional</span></span>
-        <input type="number" id="mn-freight" min="0" step="any" placeholder="0.00" />
+        <span class="mn-flabel">Insurance premium % <span class="mn-opt">optional</span></span>
+        <input type="number" id="mn-insurance" min="0" step="any" placeholder="e.g. 0.05" />
       </div>
       <div class="mn-fieldset" style="margin-bottom:0">
         <span class="mn-flabel">Dimensions in</span>
@@ -375,22 +375,16 @@
 
     <!-- DOMESTIC transport details (only for Domestic Logistics) -->
     <div class="mn-cond" id="mn-domestic-wrap" style="margin-top:16px">
-      <div class="mn-row">
-        <div class="mn-fieldset" style="margin-bottom:0">
-          <span class="mn-flabel">Transportation type</span>
-          <select id="mn-transport-type">
-            <option value="">Select…</option>
-            <option>Motorbike / Dispatch</option><option>Car / Van</option>
-            <option>1 Ton Pickup</option><option>3 Tons Truck</option>
-            <option>7 Tons Open Truck</option><option>10 Tons Truck</option>
-            <option>15 Tons Truck</option><option>30 Tons Trailer</option>
-            <option>Flatbed / Lowbed</option><option>Other</option>
-          </select>
-        </div>
-        <div class="mn-fieldset" style="margin-bottom:0">
-          <span class="mn-flabel">Insurance premium % <span class="mn-opt">optional</span></span>
-          <input type="number" id="mn-dom-insurance" min="0" step="any" placeholder="e.g. 0.05" />
-        </div>
+      <div class="mn-fieldset" style="margin-bottom:0">
+        <span class="mn-flabel">Transportation type</span>
+        <select id="mn-transport-type">
+          <option value="">Select…</option>
+          <option>Motorbike / Dispatch</option><option>Car / Van</option>
+          <option>1 Ton Pickup</option><option>3 Tons Truck</option>
+          <option>7 Tons Open Truck</option><option>10 Tons Truck</option>
+          <option>15 Tons Truck</option><option>30 Tons Trailer</option>
+          <option>Flatbed / Lowbed</option><option>Other</option>
+        </select>
       </div>
     </div>
 
@@ -693,7 +687,7 @@
     var wrap = document.createElement('div'); wrap.className='mn-gitem mn-igrid';
     wrap.innerHTML =
       '<label class="mn-gspan mn-hswrap"><span>Commodity (HS search) <b>*</b></span>'+
-        '<input type="text" data-i="desc" autocomplete="off" placeholder="Search HS code or commodity name…" value="'+esc(it.desc||'')+'" />'+
+        '<input type="text" data-i="desc" autocomplete="off" placeholder="Search HS code or commodity name\u2026" value="'+esc(it.desc||'')+'" />'+
         '<input type="hidden" data-i="hs" value="'+esc(it.hs||'')+'" />'+
         '<input type="hidden" data-i="duty" value="'+esc(it.duty!=null?it.duty:'')+'" />'+
         '<input type="hidden" data-i="vat" value="'+esc(it.vat!=null?it.vat:'')+'" />'+
@@ -738,6 +732,7 @@
           '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">W <b style="color:var(--amber)">*</b></span><input type="number" data-p="w" min="0" step="any" placeholder="0" value="'+esc(p.w!=null?p.w:'')+'" /></div>'+
           '<div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">H <b style="color:var(--amber)">*</b></span><input type="number" data-p="h" min="0" step="any" placeholder="0" value="'+esc(p.h!=null?p.h:'')+'" /></div>'+
         '</div>'+
+        (isFCL() ? '' : '<div class="mn-row"><div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Freight cost <span class="mn-opt">this package</span></span><input type="number" data-p="freight" min="0" step="any" placeholder="0.00" value="'+esc(p.freight!=null?p.freight:'')+'" /></div><div class="mn-fieldset" style="margin-bottom:10px"></div></div>')+
         (dom ? '<div class="mn-row"><div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Pickup location</span><input type="text" data-p="pickup" placeholder="e.g. Warehouse A" value="'+esc(p.pickup||'')+'" /></div><div class="mn-fieldset" style="margin-bottom:10px"><span class="mn-flabel">Delivery location</span><input type="text" data-p="delivery" placeholder="e.g. Location B" value="'+esc(p.delivery||'')+'" /></div></div>' : '')+
         '<div class="mn-sub">'+
           '<div class="mn-sub-label">Commodities in this package</div>'+
@@ -833,6 +828,7 @@
       weight:num(pget('weight')), length:num(pget('l')), width:num(pget('w')), height:num(pget('h')),
       commodities:commodities
     };
+    if(!isFCL()){ obj.freight = num(pget('freight')); }
     if(isDomestic()){ obj.pickupLocation=pget('pickup'); obj.deliveryLocation=pget('delivery'); }
     return obj;
   }
@@ -970,11 +966,11 @@
       origin:val('mn-origin'), destination:val('mn-dest'), cargoReadyDate:val('mn-ready'), deliveryDate:val('mn-deliverydate'),
       cargoType:state.cargoType, cargoTypeDetails:state.cargoTypeFields,
       requirements:{ handling:val('mn-req-handling'), transportation:val('mn-req-transport'), storage:val('mn-req-storage'), packaging:val('mn-req-packaging'), special:val('mn-req-special') },
-      currency:val('mn-ccy'), totalFreight:val('mn-freight'), dimensionUnit:val('mn-unit'),
+      currency:val('mn-ccy'), insurancePremium:val('mn-insurance'), dimensionUnit:val('mn-unit'),
       cargoStructure: units.level,           // "container" (FCL) or "package" (all other modes)
       containers: units.level==='container' ? units.containers : [],
       packages: units.level==='package' ? units.packages : [],
-      domestic: isDomestic ? { transportationType:val('mn-transport-type'), insurancePremium:val('mn-dom-insurance') } : null,
+      domestic: isDomestic ? { transportationType:val('mn-transport-type') } : null,
       documentsAvailable:state.documents,
       leadTags:[state.direction, state.mode, state.priority].filter(Boolean)
     };
