@@ -177,7 +177,7 @@
   #mn-quote-root .mn-spin{display:inline-block; width:15px; height:15px; border:2px solid rgba(26,18,5,.35); border-top-color:#1a1205; border-radius:50%; animation:mnspin .7s linear infinite; vertical-align:-2px; margin-right:8px;}
   @keyframes mnspin{to{transform:rotate(360deg);}}
   /* attachment fields */
-  #mn-quote-root .mn-attach{margin-top:12px;}
+  #mn-quote-root .mn-attach{margin-top:14px;}
   #mn-quote-root .mn-attach-btn{display:inline-flex; align-items:center; gap:8px; cursor:pointer; background:#fff; border:1.5px dashed var(--amber); color:var(--amber-deep); border-radius:10px; padding:10px 16px; font-size:13px; font-weight:600; transition:.15s;}
   #mn-quote-root .mn-attach-btn:hover{background:var(--amber-soft);}
   #mn-quote-root .mn-attach-list{margin-top:8px;}
@@ -312,7 +312,7 @@
     </div>
     <div class="mn-row">
       <div class="mn-fieldset"><span class="mn-flabel">Email</span><input type="email" id="mn-c-email" placeholder="you@company.com" /></div>
-      <div class="mn-fieldset"><span class="mn-flabel">Phone / WhatsApp</span><input type="tel" id="mn-c-phone" placeholder="+234…" /></div>
+      <div class="mn-fieldset"><span class="mn-flabel">Phone / WhatsApp</span><input type="tel" id="mn-c-phone" placeholder="+234&hellip;" /></div>
     </div>
     <label class="mn-consent"><input type="checkbox" id="mn-c-consent" /><span>I agree that Matnode Logistics may contact me about this enquiry and store my details to respond.</span></label>
     <p class="mn-err" id="mn-eC">Please add a message, your name, a valid email, and accept to continue.</p>
@@ -431,7 +431,7 @@
     </div>
     <div class="mn-row">
       <div class="mn-fieldset"><span class="mn-flabel">Email</span><input type="email" id="mn-email" placeholder="you@company.com" /></div>
-      <div class="mn-fieldset"><span class="mn-flabel">Phone / WhatsApp</span><input type="tel" id="mn-phone" placeholder="+234…" /></div>
+      <div class="mn-fieldset"><span class="mn-flabel">Phone / WhatsApp</span><input type="tel" id="mn-phone" placeholder="+234&hellip;" /></div>
     </div>
     <div class="mn-fieldset">
       <span class="mn-flabel">Preferred contact</span>
@@ -501,7 +501,7 @@
     xhr.send(fd);
   }
   // Build an attachment control; stores resulting URL(s) on the given array. Returns the element (or null if uploads disabled).
-  function makeAttachField(label, targetArr, multiple){
+  function makeAttachField(label, targetArr, multiple, docType){
     if(!uploadsEnabled()) return null;
     var wrap = document.createElement('div'); wrap.className='mn-attach';
     wrap.innerHTML =
@@ -516,7 +516,7 @@
         row.innerHTML='<span class="mn-attach-name">'+esc(file.name)+'</span><span class="mn-attach-status">uploading… <span class="mn-pct">0%</span></span>';
         list.appendChild(row); reportResize();
         uploadFile(file, function(url){
-          if(url){ targetArr.push({name:file.name, url:url}); row.querySelector('.mn-attach-status').innerHTML='<span style="color:var(--ok)">\u2713 uploaded</span>'; }
+          if(url){ var rec={name:file.name, url:url}; if(docType) rec.documentType=docType; targetArr.push(rec); row.querySelector('.mn-attach-status').innerHTML='<span style="color:var(--ok)">\u2713 uploaded</span>'; }
           else { row.querySelector('.mn-attach-status').innerHTML='<span style="color:var(--bad)">failed \u2014 our team will request it</span>'; }
           reportResize();
         }, function(pct){ var p=row.querySelector('.mn-pct'); if(p) p.textContent=pct+'%'; });
@@ -657,6 +657,7 @@
 
   function isFCL(){ return state.mode==='Sea FCL'; }
   function isLCL(){ return state.mode==='Sea LCL'; }
+  function isRORO(){ return state.mode==='RORO'; }
   function isDomestic(){ return state.direction==='Domestic Logistics'; }
   // mode-aware label for the package-level unit
   function unitLabel(){
@@ -665,8 +666,8 @@
     if(m.indexOf('Sea')===0 || m==='RORO') return 'Sea Shipment';
     return 'Package';
   }
-  // per-unit freight only for FCL (container-level) and LCL (package-level). Others use one shipment-level total.
-  function perUnitFreight(){ return isFCL() || isLCL(); }
+  // per-unit freight only for FCL (container-level) and RORO (per vehicle). Others (Air, LCL, Breakbulk) use one shipment-level total.
+  function perUnitFreight(){ return isFCL() || isRORO(); }
 
   function updateBuilderMode(){
     var dom = isDomestic();
@@ -1065,12 +1066,20 @@
   (function(){ var g=$('mn-priority'); if(g){ var c=q('[data-val="Normal"]',g); if(c) c.classList.add('mn-sel'); } })();
   // mount attachment controls (only render if Cloudinary configured; otherwise fields stay hidden and notes explain team will request files)
   (function(){
-    var docHost=$('mn-docs-attach'); var af=makeAttachField('Attach Packing List / Commercial Invoice', state.docAttachments, true);
-    if(af && docHost){ docHost.appendChild(af); }
+    var docHost=$('mn-docs-attach');
+    if(docHost && uploadsEnabled()){
+      // named slots so the team (and future data-extraction) knows which file is which
+      var ci=makeAttachField('Commercial Invoice', state.docAttachments, true, 'Commercial Invoice');
+      var pl=makeAttachField('Packing List', state.docAttachments, true, 'Packing List');
+      var ot=makeAttachField('Other documents', state.docAttachments, true, 'Other');
+      if(ci) docHost.appendChild(ci);
+      if(pl) docHost.appendChild(pl);
+      if(ot) docHost.appendChild(ot);
+    }
     var conHost=$('mn-consult-attach'); var cf=makeAttachField('Attach any relevant documents', state.consultAttachments, true);
     if(cf && conHost){ conHost.appendChild(cf); }
     // if uploads disabled, keep the helpful note; if enabled, tighten the doc note
-    if(uploadsEnabled()){ var dn=$('mn-docs-note'); if(dn) dn.textContent='Attach your Packing List or Commercial Invoice to speed up your quote (optional).'; }
+    if(uploadsEnabled()){ var dn=$('mn-docs-note'); if(dn) dn.textContent='Attach your Commercial Invoice and Packing List to speed up your quote (optional). You can add more than one file to each.'; }
   })();
   showStep('1');
 
