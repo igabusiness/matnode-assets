@@ -480,6 +480,30 @@
   // File uploads (optional): set both to enable attachment fields. Leave empty to hide them.
   var CLOUDINARY_CLOUD  = "ovzj7no5"; // your Cloudinary cloud name
   var CLOUDINARY_PRESET = "matnode-quotes"; // your Cloudinary unsigned upload preset
+
+  // ---- DUTY ESTIMATE SETTINGS ----
+  // Uniform government levies applied to (almost) all imports. These are NOT per-commodity:
+  // they are the same across HS codes, so they live here, not in the HS database. If the
+  // government changes one of these, update the single value below (not the HS table).
+  // The per-commodity rates (duty, VAT, IAT, EXC) come from the HS code the customer selects.
+  var MN_LEVIES = {
+    surcharge: 7,    // % of Import Duty
+    etls:      0.5,  // ECOWAS Trade Liberalisation Scheme, % of CIF
+    ciss:      1,    // Comprehensive Import Supervision Scheme, % of FOB
+    fcs:       4,    // FCS Levy, % of FOB
+    nac:       2     // NAC Levy, % of CIF
+  };
+  // Exchange rate (NGN per 1 unit of the entry currency). Duty is assessed in Naira.
+  // Patrick/Matnode maintain these. "government" is the customs/official rate used for the
+  // estimate; "localMarket" is kept for reference. Update periodically (or wire the CBN
+  // auto-fetch in fetchCbnRate() below and it will override MN_FX.government when it succeeds).
+  var MN_FX = {
+    government:  1530,   // <-- UPDATE: current CBN official rate (NGN/USD)
+    localMarket: 1650    // <-- UPDATE: current local-market rate (NGN/USD), reference only
+  };
+  var MN_FX_LABEL = "CBN official";  // shown on the estimate so the basis is transparent
+  // Default insurance premium (% of value+freight) if the customer leaves it blank.
+  var MN_DEFAULT_INSURANCE = 0.5;
   // =========================================
 
   var root = document.getElementById('mn-quote-root');
@@ -1008,6 +1032,83 @@
     else { submit(stepId); }
   });
 
+  // ================= DUTY ESTIMATE ENGINE =================
+  // Client-side implementation of Patrick's documented formula. Per-commodity rates
+  // (duty/vat/iat/exc) come from the selected HS code; the uniform levies come from
+  // MN_LEVIES; the result is converted to NGN using MN_FX. Validated to the cent
+  // against Patrick's worked example.
+  function mnNum(v){ var x=parseFloat(v); return isFinite(x)?x:0; }
+  function mnR2(x){ return Math.round(x*100)/100; }
+
+  function mnFlattenCommodities(payload){
+    var out=[];
+    var pushPkg=function(p){ if(p && p.commodities && p.commodities.length){ p.commodities.forEach(function(c){ out.push(c); }); } };
+    if(payload.cargoStructure==='container' && payload.containers && payload.containers.length){
+      payload.containers.forEach(function(ctr){ if(ctr.packages) ctr.packages.forEach(pushPkg); });
+    } else if(payload.packages && payload.packages.length){
+      payload.packages.forEach(pushPkg);
+    }
+    return out;
+  }
+  function mnResolveFreight(payload){
+    if(payload.totalFreight!=null && mnNum(payload.totalFreight)>0) return mnNum(payload.totalFreight);
+    var t=0;
+    if(payload.cargoStructure==='container' && payload.containers){ payload.containers.forEach(function(c){ t+=mnNum(c.freight); }); }
+    if(payload.packages){ payload.packages.forEach(function(p){ t+=mnNum(p.freight); }); }
+    return t;
+  }
+  function mnCalcItem(item, allocFreight, insRate){
+    var value=mnNum(item.value), freight=mnNum(allocFreight);
+    var rDuty=mnNum(item.duty), rVat=mnNum(item.vat), rIat=mnNum(item.iat), rExc=mnNum(item.exc);
+    var insurance=(value+freight)*insRate/100;
+    var cif=value+freight+insurance, fob=value;
+    var duty=cif*rDuty/100;
+    var surcharge=duty*MN_LEVIES.surcharge/100;
+    var etls=cif*MN_LEVIES.etls/100;
+    var ciss=fob*MN_LEVIES.ciss/100;
+    var fcs=fob*MN_LEVIES.fcs/100;
+    var nac=cif*MN_LEVIES.nac/100;
+    var exc=fob*rExc/100;
+    var iat=cif*rIat/100;
+    var vatBase=cif+duty+surcharge+etls+ciss+fcs+nac+exc+iat;
+    var vat=vatBase*rVat/100;
+    var itemDuty=duty+surcharge+etls+ciss+fcs+nac+exc+iat+vat;
+    // round each line item to 2dp before aggregating (matches the validated engine / invoice-style rounding)
+    return { importDuty:mnR2(duty), surcharge:mnR2(surcharge), etls:mnR2(etls), ciss:mnR2(ciss), fcs:mnR2(fcs), nac:mnR2(nac), exc:mnR2(exc), iat:mnR2(iat), vat:mnR2(vat), total:mnR2(itemDuty), cif:mnR2(cif) };
+  }
+  // Returns null when there's nothing to price (e.g. domestic / no commodities / no value).
+  function mnComputeEstimate(payload){
+    var commodities=mnFlattenCommodities(payload);
+    if(!commodities.length) return null;
+    var anyValue=commodities.some(function(c){ return mnNum(c.value)>0; });
+    if(!anyValue) return null;
+    var insRate = payload.insurancePremium!=='' && payload.insurancePremium!=null ? mnNum(payload.insurancePremium) : MN_DEFAULT_INSURANCE;
+    var totalFreight=mnResolveFreight(payload);
+    var alloc=totalFreight/(commodities.length||1);
+    var agg={ importDuty:0, surcharge:0, etls:0, ciss:0, fcs:0, nac:0, exc:0, iat:0, vat:0, total:0, cif:0 };
+    commodities.forEach(function(c){
+      var it=mnCalcItem(c, alloc, insRate);
+      for(var k in agg){ agg[k]+=it[k]; }
+    });
+    // three-line summary buckets
+    var leviesAndSurcharge = agg.surcharge+agg.etls+agg.ciss+agg.fcs+agg.nac+agg.exc+agg.iat;
+    var fx = mnNum(MN_FX.government) || 1;
+    var ccy = payload.currency || 'USD';
+    return {
+      currency: ccy,
+      fxRate: fx,
+      fxLabel: MN_FX_LABEL,
+      totalCcy: mnR2(agg.total),
+      totalNGN: mnR2(agg.total*fx),
+      importDutyCcy: mnR2(agg.importDuty),
+      vatCcy: mnR2(agg.vat),
+      leviesCcy: mnR2(leviesAndSurcharge),
+      cifCcy: mnR2(agg.cif)
+    };
+  }
+  function mnFmt(n){ return Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function mnFmtNGN(n){ return '₦'+Number(Math.round(n)).toLocaleString('en-US'); }
+
   // ================= submit =================
   function val(id){ var el=$(id); return el?el.value.trim():''; }
   function buildPayload(isConsult){
@@ -1041,6 +1142,29 @@
       documentAttachments: state.docAttachments,
       leadTags:[state.direction, state.mode, state.priority].filter(Boolean)
     };
+
+    // ---- Instant duty estimate (flat custom fields for IgaOS: headline + summary) ----
+    // Only produced for import/export shipments with cargo value; domestic/consultation
+    // and empty-value requests simply omit these fields.
+    var est = null;
+    try { if(!isDomestic) est = mnComputeEstimate(payload); } catch(e){ console.error('[Matnode] estimate error', e); }
+    if(est){
+      payload.estimate = est; // full object (kept for reference / future use)
+      // flat fields = easy to map 1:1 to IgaOS custom fields and merge into email/WhatsApp
+      payload.estimateCurrency        = est.currency;
+      payload.estimateTotalNGN        = Math.round(est.totalNGN);
+      payload.estimateTotalNGNDisplay = mnFmtNGN(est.totalNGN);
+      payload.estimateTotalCcy        = est.totalCcy;
+      payload.estimateTotalCcyDisplay = est.currency+' '+mnFmt(est.totalCcy);
+      payload.estimateImportDuty      = est.currency+' '+mnFmt(est.importDutyCcy);
+      payload.estimateVAT             = est.currency+' '+mnFmt(est.vatCcy);
+      payload.estimateLevies          = est.currency+' '+mnFmt(est.leviesCcy);
+      payload.estimateFxRate          = est.fxRate;
+      payload.estimateBasis           = 'Assessed at ₦'+mnFmt(est.fxRate)+'/'+est.currency+' ('+est.fxLabel+'). Preliminary estimate — full quotation within 24 hours.';
+      payload.estimateAvailable       = true;
+    } else {
+      payload.estimateAvailable       = false;
+    }
     return payload;
   }
 
